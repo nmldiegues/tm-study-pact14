@@ -34,8 +34,11 @@ The available locks are those in the SSYNC library. For instance, HTICKET_LOCKS.
 
 
 After building the binaries, you may find them inside the folder of each benchmark.
+
 *Very important*: to collect energy measurements, the framework needs to run with root privileges. Remember this whenever you run the benchmarks.
+
 You may also need to issue the following command before that: "sudo modprobe msr"
+
 *Note*: if you seek to run with more than 8 threads, you need to modify the thread.c files for the backends where the threads are bound to the available CPUs.
 
 
