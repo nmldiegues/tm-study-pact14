@@ -1,0 +1,1 @@
+Force git to accept the empty lib folder. Otherwise the TinySTM build fails.
