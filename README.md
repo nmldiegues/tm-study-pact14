@@ -50,3 +50,5 @@ When using this work, please cite accordingly:
 
 You may also find the following paper relevant for citation:
  Nuno Diegues and Paolo Romano, "Self-Tuning Intel Transactional Synchronization Extensions", Proceedings of the International Conference on Autonomic Computing, ICAC 2014
+
+This work was supported by national funds through Fundação para a Ciência e Tecnologia (FCT) with reference UID/CEC/50021/2013 and by the GreenTM project (EXPL/EEI-ESS/0361/2013).
