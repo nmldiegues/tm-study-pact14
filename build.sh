@@ -1,7 +1,7 @@
 #!/bin/sh
 
-FOLDERS="genome intruder kmeans labyrinth ssca2 vacation yada redblacktree hashmap"
-
+FOLDERS="manual_example"
+#genome intruder kmeans labyrinth ssca2 vacation yada redblacktree hashmap
 bash clean.sh
 
 echo "Configuring $1"

@@ -59,7 +59,7 @@ extern "C" {
 
 
 
-
+#include <libpmemobj/base.h>
 #  include <setjmp.h>
 #  define SIGSETJMP(env, savesigs)      sigsetjmp(env, savesigs)
 #  define SIGLONGJMP(env, val)          siglongjmp(env, val); assert(0)
@@ -83,8 +83,8 @@ Thread*  TxNewThread   ();
 
 void     TxFreeThread  (Thread*);
 void     TxInitThread  (Thread*, long id);
-int      TxCommit      (Thread*);
-int      TxCommitSTM   (Thread*);
+int      TxCommit      (Thread*, PMEMobjpool *pop);
+int      TxCommitSTM   (Thread*, PMEMobjpool *pop);
 void     TxAbort       (Thread*);
 intptr_t TxLoad        (Thread*, volatile intptr_t*);
 void     TxStore       (Thread*, volatile intptr_t*, intptr_t);
@@ -98,7 +98,7 @@ void     TxFree        (Thread*, void*);
 void     TxIncClock    ();
 
 long     TxValidate    (Thread*);
-long     TxFinalize    (Thread*, long);
+long     TxFinalize    (Thread*, long, PMEMobjpool *pop);
 void     TxResetAfterFinalize (Thread*);
 
 

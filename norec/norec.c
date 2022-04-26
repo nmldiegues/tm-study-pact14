@@ -5,6 +5,8 @@
 #include <assert.h>
 #include <pthread.h>
 #include <signal.h>
+#include <libpmemobj/base.h>
+#include <libpmemobj/tx_base.h>
 #include "platform.h"
 #include "norec.h"
 #include "util.h"
@@ -174,14 +176,41 @@ ExtendList (AVPair* tail)
     return e;
 }
 
-__INLINE__ void
-WriteBackForward (Log* k)
+static void
+log_stages(PMEMobjpool *pop_local, enum pobj_tx_stage stage, void *arg)
 {
+    /* Commenting this out because this is not required during normal execution. */
+    /* dr_fprintf(STDERR, "cb stage: ", desc[stage], " "); */
+}
+
+
+__INLINE__ void
+WriteBackForward (Log* k, PMEMobjpool *pop)
+{
+    //printf("writeback point\n");
     AVPair* e;
     AVPair* End = k->put;
+
+    //Add to the undo log
+    printf("Starting a transaction\n");
+    /* Sometimes breaks here */
+    pmemobj_tx_begin(pop, NULL, TX_PARAM_CB, log_stages, NULL,
+                     TX_PARAM_NONE);
+    printf("transaction started\n");
+    //Write
+    printf("Starting a write\n");
     for (e = k->List; e != End; e = e->Next) {
+        //printf("adding %p to tx\n", e->Addr);
+        pmemobj_tx_add_range_direct(e->Addr, 1);
         *(e->Addr) = e->Valu;
     }
+    printf("Written to pmem\n");
+    //Commit
+    pmemobj_tx_commit();
+    printf("Commited\n");
+    pmemobj_tx_end();
+    printf("Ended\n");
+
 }
 
 void
@@ -277,6 +306,7 @@ txReset (Thread* Self)
 __INLINE__ void
 txCommitReset (Thread* Self)
 {
+    printf("Attempt to reset\n");
     txReset(Self);
     Self->Retries = 0;
 }
@@ -325,7 +355,7 @@ backoff (Thread* Self, long attempt)
 
 
 __INLINE__ long
-TryFastUpdate (Thread* Self)
+TryFastUpdate (Thread* Self, PMEMobjpool *pop)
 {
     Log* const wr = &Self->wrSet;
     long ctr;
@@ -339,7 +369,7 @@ TryFastUpdate (Thread* Self)
     }
 
     {
-        WriteBackForward(wr); /* write-back the deferred stores */
+        WriteBackForward(wr, pop); /* write-back the deferred stores */
     }
     MEMBARSTST(); /* Ensure the above stores are visible  */
     LOCK->value = Self->snapshot + 2;
@@ -351,6 +381,7 @@ TryFastUpdate (Thread* Self)
 void
 TxAbort (Thread* Self)
 {
+    printf("TX aborted\n");
     Self->Retries++;
     Self->Aborts++;
 
@@ -445,7 +476,7 @@ TxStart (Thread* Self, sigjmp_buf* envPtr)
 }
 
 int
-TxCommit (Thread* Self)
+TxCommit (Thread* Self, PMEMobjpool *pop)
 {
     /* Fast-path: Optional optimization for pure-readers */
     if (Self->wrSet.put == Self->wrSet.List)
@@ -454,7 +485,8 @@ TxCommit (Thread* Self)
         return 1;
     }
 
-    if (TryFastUpdate(Self)) {
+    if (TryFastUpdate(Self, pop)) {
+        printf("Calling reset after tryFastUpdate\n");
         txCommitReset(Self);
         return 1;
     }
@@ -464,7 +496,7 @@ TxCommit (Thread* Self)
 }
 
 int
-TxCommitSTM (Thread* Self)
+TxCommitSTM (Thread* Self, PMEMobjpool *pop)
 {
     /* Fast-path: Optional optimization for pure-readers */
     if (Self->wrSet.put == Self->wrSet.List)
@@ -473,7 +505,7 @@ TxCommitSTM (Thread* Self)
         return 1;
     }
 
-    if (TryFastUpdate(Self)) {
+    if (TryFastUpdate(Self, pop)) {
         txCommitReset(Self);
         return 1;
     }
@@ -510,8 +542,9 @@ long TxValidate (Thread* Self) {
 }
 
 
-long TxFinalize (Thread* Self, long clock) {
+long TxFinalize (Thread* Self, long clock, PMEMobjpool *pop) {
     if (Self->wrSet.put == Self->wrSet.List) {
+        printf("Calling commit reset in TXFinalize\n");
         txCommitReset(Self);
         return 0;
     }
@@ -521,12 +554,13 @@ long TxFinalize (Thread* Self, long clock) {
     }
 
     Log* const wr = &Self->wrSet;
-    WriteBackForward(wr); /* write-back the deferred stores */
+    WriteBackForward(wr, pop); /* write-back the deferred stores */
     LOCK->value += LOCK->value + 2;
 
     return 0;
 }
 
 void TxResetAfterFinalize (Thread* Self) {
+    printf("Calling commit reset after TXFinalize\n");
     txCommitReset(Self);
 }

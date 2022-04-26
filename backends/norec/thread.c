@@ -7,7 +7,7 @@
 #include <sched.h>
 #include "thread.h"
 #include "types.h"
-#include "rapl.h"
+//#include "rapl.h"
 
 static THREAD_LOCAL_T    global_threadId;
 static long              global_numThread       = 1;
@@ -38,7 +38,7 @@ static void threadWait (void* argPtr)
         global_funcPtr(global_argPtr);
         THREAD_BARRIER(global_barrierPtr, threadId); /* wait for end parallel */
         if (threadId == 0) {
-            endEnergy();
+            //endEnergy();
             break;
         }
     }
@@ -71,7 +71,7 @@ void thread_startup (long numThread)
     global_threads = (THREAD_T*)malloc(numThread * sizeof(THREAD_T));
     assert(global_threads);
 
-    startEnergy();
+    //startEnergy();
 
     /* Set up pool */
     THREAD_ATTR_INIT(global_threadAttr);

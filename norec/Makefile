@@ -15,6 +15,7 @@ CFLAGS  := -g -w -O3
 LD      := gcc
 
 LIBNOREC := libnorec.a
+LIBS = -lpmemobj
 
 SRCS := \
 	norec.c \

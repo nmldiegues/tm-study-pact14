@@ -1,7 +1,7 @@
 CC       := gcc
 CFLAGS   += -g -Wall -pthread
 CFLAGS   += -O3
-CFLAGS   += -I$(LIB) -I../rapl-power/
+CFLAGS   += -I$(LIB) 
 CPP      := g++
 CPPFLAGS += $(CFLAGS)
 LD       := g++
